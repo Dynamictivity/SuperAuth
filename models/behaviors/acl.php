@@ -26,7 +26,7 @@
  * @package       cake
  * @subpackage    cake.cake.libs.model.behaviors
  */
-class SuperAclBehavior extends ModelBehavior {
+class AclBehavior extends ModelBehavior {
 
 /**
  * Maps ACL type options to ACL models
