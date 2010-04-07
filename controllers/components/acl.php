@@ -197,6 +197,103 @@ class AclComponent extends Object {
 	function revoke($aro, $aco, $action = "*") {
 		return $this->_Instance->revoke($aro, $aco, $action);
 	}
+	
+/**
+ * Acl extended methods
+ */
+    function cachePermissions($conditions = null, $clear = false) {
+		if ($conditions && !is_array($conditions)) {
+		    return;
+		}
+	
+		$PermissionCache = ClassRegistry::init('PermissionCache');
+		if ($clear) {
+		    $PermissionCache->deleteAll('1=1', false);
+		}
+	
+		if (!$conditions && !$PermissionCache->find('count')) {
+		    $aros = $this->controller->Acl->Aro->find('list');
+		    $acos = $this->controller->Acl->Aro->find('count');
+		    set_time_limit(max(count($aros) * $acos * 0.1, 30));
+		    foreach ($aros as $id => $display) {
+				$PermissionCache->populate('Aro', $id);
+		    }
+		}
+	
+		if (isset($conditions['aco_id'])) {
+		    $PermissionCache->populate('Aco', $conditions['aco_id'], true);
+		}
+	
+		if (isset($conditions['aro_id'])) {
+		    $PermissionCache->populate('Aro', $conditions['aro_id'], true);
+		}
+    }
+
+    function aclConditions($options = array()) {
+		$settings = array(
+		    'model' => $this->controller->modelClass,
+		    'permissions' => null,
+		    'conditions' => null,
+		    'additional' => array(),
+		    'fields' => array('DISTINCT id', 'name'),
+		    'contain' => array(
+			    'PermissionCache' => array(
+					'fields' => array('foreign_key')
+				),
+			    'Owner' => array(
+					'fields' => array('id', 'name')
+				),
+			    'Permission'
+		    )
+		);
+	
+		extract(Set::merge($settings, $options));
+	
+		$sql = array(
+		    'conditions' => array(
+			'or' => array(
+			    'and' => array(
+				'PermissionCache.aro_id' => $this->userAros['Ids'],
+				'PermissionCache._read' => 1,
+				$permissions
+			    ),
+			    $model . '.owner_id' => User::get('id')
+			),
+			$conditions
+		    ),
+		    'fields' => $fields,
+		    'contain' => $contain
+		);
+	
+		return Set::merge($sql, $additional);
+    }
+
+    function __getUserAros($userId = null) {
+		if (!$userId) {
+		    $userId = User::get('id');
+		}
+		
+		$aros = $this->controller->Acl->Aro->find('all', array(
+		    'conditions' => array(
+			'Aro.model' => 'User',
+			'Aro.foreign_key' => $userId
+		    ),
+		    'fields' => array(
+			'Aro.id',
+			'Aro.model',
+			'Aro.foreign_key'
+		    )
+		));
+		
+		foreach ($aros as $aro) {
+		    $this->userAros['Objects'][] = array(
+				$aro['Aro']['model'] => array(
+				    'id' => $aro['Aro']['foreign_key']
+				)
+		    );
+		    $this->userAros['Ids'][$aro['Aro']['id']] = $aro['Aro']['id'];
+		}
+    }
 }
 
 /**
@@ -654,102 +751,5 @@ class IniAcl extends AclBase {
 		array_unshift($array, "");
 		return $array;
 	}
-	
-/**
- * Acl extended methods
- */
-    function cachePermissions($conditions = null, $clear = false) {
-		if ($conditions && !is_array($conditions)) {
-		    return;
-		}
-	
-		$PermissionCache = ClassRegistry::init('PermissionCache');
-		if ($clear) {
-		    $PermissionCache->deleteAll('1=1', false);
-		}
-	
-		if (!$conditions && !$PermissionCache->find('count')) {
-		    $aros = $this->controller->Acl->Aro->find('list');
-		    $acos = $this->controller->Acl->Aro->find('count');
-		    set_time_limit(max(count($aros) * $acos * 0.1, 30));
-		    foreach ($aros as $id => $display) {
-				$PermissionCache->populate('Aro', $id);
-		    }
-		}
-	
-		if (isset($conditions['aco_id'])) {
-		    $PermissionCache->populate('Aco', $conditions['aco_id'], true);
-		}
-	
-		if (isset($conditions['aro_id'])) {
-		    $PermissionCache->populate('Aro', $conditions['aro_id'], true);
-		}
-    }
-
-    function aclConditions($options = array()) {
-		$settings = array(
-		    'model' => $this->controller->modelClass,
-		    'permissions' => null,
-		    'conditions' => null,
-		    'additional' => array(),
-		    'fields' => array('DISTINCT id', 'name'),
-		    'contain' => array(
-			    'PermissionCache' => array(
-					'fields' => array('foreign_key')
-				),
-			    'Owner' => array(
-					'fields' => array('id', 'name')
-				),
-			    'Permission'
-		    )
-		);
-	
-		extract(Set::merge($settings, $options));
-	
-		$sql = array(
-		    'conditions' => array(
-			'or' => array(
-			    'and' => array(
-				'PermissionCache.aro_id' => $this->userAros['Ids'],
-				'PermissionCache._read' => 1,
-				$permissions
-			    ),
-			    $model . '.owner_id' => User::get('id')
-			),
-			$conditions
-		    ),
-		    'fields' => $fields,
-		    'contain' => $contain
-		);
-	
-		return Set::merge($sql, $additional);
-    }
-
-    function __getUserAros($userId = null) {
-		if (!$userId) {
-		    $userId = User::get('id');
-		}
-		
-		$aros = $this->controller->Acl->Aro->find('all', array(
-		    'conditions' => array(
-			'Aro.model' => 'User',
-			'Aro.foreign_key' => $userId
-		    ),
-		    'fields' => array(
-			'Aro.id',
-			'Aro.model',
-			'Aro.foreign_key'
-		    )
-		));
-		
-		foreach ($aros as $aro) {
-		    $this->userAros['Objects'][] = array(
-				$aro['Aro']['model'] => array(
-				    'id' => $aro['Aro']['foreign_key']
-				)
-		    );
-		    $this->userAros['Ids'][$aro['Aro']['id']] = $aro['Aro']['id'];
-		}
-    }
 }
 ?>
