@@ -30,7 +30,6 @@
  */
 class AclComponent extends Object {
     public $userAros = array();
-    public $conditions = array();
 
 /**
  * Instance of an ACL class
@@ -68,10 +67,11 @@ class AclComponent extends Object {
 			$this->__getUserAros();
 		}
 		
+		/*
 		switch ($this->controller->action) {
 		    case 'view':
 			if (isset($this->params['pass'][0])) {
-			    $this->conditions = array(
+			    $this->controller->conditions = array(
 				'conditions' => array(
 				    $this->controller->modelClass . '.id' => $this->controller->params['pass'][0]
 				),
@@ -107,8 +107,16 @@ class AclComponent extends Object {
 			    );
 			}
 	
-			$this->conditions = $this->aclConditions($conditions);
+			$this->controller->conditions = $this->aclConditions($conditions);
 			break;
+		}
+		*/
+		
+		switch ($this->controller->action) {
+		    case 'index':
+				$conditions = array('conditions' => array($this->controller->modelClass . '.is_active' => 1));
+				//$this->controller->conditions = $this->aclConditions($conditions);
+				break;
 		}
 	}
 
