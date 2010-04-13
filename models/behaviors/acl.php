@@ -27,6 +27,8 @@
  * @subpackage    cake.cake.libs.model.behaviors
  */
 class AclBehavior extends ModelBehavior {
+	// row-level acl
+	var $__userAros = null;
 
 /**
  * Maps ACL type options to ACL models
@@ -34,7 +36,7 @@ class AclBehavior extends ModelBehavior {
  * @var array
  * @access protected
  */
-	var $__typeMaps = array('requester' => 'Aro', 'controlled' => 'Aco', 'both' => array('Aco', 'Aro'));
+	var $__typeMaps = array('requester' => 'Aro', 'controlled' => 'Aco', 'both' => array('Aro', 'Aco'));
 
 /**
  * Sets up the configuation for the model, and loads ACL models if they haven't been already
@@ -44,16 +46,19 @@ class AclBehavior extends ModelBehavior {
  * @access public
  */
 	function setup(&$model, $config = array()) {
-		if (is_array($config) && !empty($config)) {
-			$config = 'both';
-		}
 		if (is_string($config)) {
 			$config = array('type' => $config);
 		}
-		$this->settings[$model->alias] = array_merge(array('type' => 'requester'), $config);
-		$types = (array)$this->__typeMaps[$this->settings[$model->alias]['type']];
+		$this->settings[$model->alias] = array_merge(
+			array('parentClass' => $model->alias, 'foreignKey' => 'parent_id', 'type' => 'controlled'),
+			$config
+		);
+		$types = $this->__typeMaps[$this->settings[$model->alias]['type']];
 		if (!class_exists('AclNode')) {
 			require LIBS . 'model' . DS . 'db_acl.php';
+		}
+		if (!is_array($types)) {
+			$types = array($types);
 		}
 		foreach($types as $type) {
 			if (PHP5) {
@@ -62,10 +67,121 @@ class AclBehavior extends ModelBehavior {
 				$model->{$type} =& ClassRegistry::init($type);
 			}
 		}
-		if (!method_exists($model, 'parentNode')) {
-			trigger_error(sprintf(__('Callback parentNode() not defined in %s', true), $model->alias), E_USER_WARNING);
+		
+		// row-level acl
+		$this->model =& $model;
+	}
+	
+	// row-level acl begin
+	function beforefind(&$model) {
+		$types = $this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
+		if (!is_array($types)) {
+			$types = array($types);
+		}
+		if (in_array('Aco', $types)) {
+			$model->bindModel(
+				array(
+					'belongsTo' => array(
+						'Permissions' => array(
+							'className' => 'PermissionCache',
+							'foreignKey' => 'id',
+							'conditions' => array(
+								'and' => array(
+									'Permissions.model' => $model->alias,
+									'Permissions._read' => 1,
+									'Permissions.aro_id' => $this->__userAros
+								)
+							),
+							'fields' => array(
+								'Permissions.id',
+								'Permissions.aro_id',
+								'Permissions.model',
+								'Permissions.foreign_key',
+								'Permissions._create',
+								'Permissions._read',
+								'Permissions._update',
+								'Permissions._delete'
+							)
+						)
+					)
+				)
+			);
 		}
 	}
+
+    function setUserAros($userId = null) {
+		$types = $this->__typeMaps[strtolower($this->settings[$this->model->alias]['type'])];
+		if (!is_array($types)) {
+			$types = array($types);
+		}
+    	
+    	if (!$userId) {
+		    return;
+		}
+		
+		if (!in_array('Aro', $types)) {
+			$Aros = Classregistry::init('Aro');
+		} else {
+			$Aros = $this->model->Aro;
+		}
+		
+		$aros = $Aros->find('all',
+			array(
+			    'conditions' => array(
+				'Aro.model' => 'User',
+				'Aro.foreign_key' => $userId
+		    ),
+		    'fields' => array(
+				'Aro.id',
+				'Aro.model',
+				'Aro.foreign_key'
+		    )
+		));
+		
+		foreach ($aros as $aro) {
+		    $this->__userAros[] = $aro['Aro']['id'];
+		}
+    }
+
+    function aclConditions($options = array()) {
+		$settings = array(
+		    'model' => $this->controller->modelClass,
+		    'permissions' => null,
+		    'conditions' => null,
+		    'additional' => array(),
+		    'fields' => array('DISTINCT id', 'name'),
+		    'contain' => array(
+			    'PermissionCache' => array(
+					'fields' => array('foreign_key')
+				),
+			    'User' => array(
+					'fields' => array('id', 'name')
+				),
+			    'Permission'
+		    )
+		);
+	
+		extract(Set::merge($settings, $options));
+	
+		$sql = array(
+		    'conditions' => array(
+			'or' => array(
+			    'and' => array(
+					'PermissionCache.aro_id' => $this->userAros['Ids'],
+					'PermissionCache._read' => 1,
+					$permissions
+			    ),
+			    $model . '.user_id' => User::get('id')
+			),
+			$conditions
+		    ),
+		    'fields' => $fields,
+		    'contain' => $contain
+		);
+	
+		return Set::merge($sql, $additional);
+    }
+    // row-level acl end
 
 /**
  * Retrieves the Aro/Aco node for this model
@@ -96,7 +212,10 @@ class AclBehavior extends ModelBehavior {
  * @access public
  */
 	function afterSave(&$model, $created) {
-		$types = (array)$this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
+		$types = $this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
+		if (!is_array($types)) {
+			$types = array($types);
+		}
 		foreach ($types as $type) {
 			$parent = $model->parentNode();
 			if (!empty($parent)) {
@@ -105,7 +224,8 @@ class AclBehavior extends ModelBehavior {
 			$data = array(
 				'parent_id' => isset($parent[0][$type]['id']) ? $parent[0][$type]['id'] : null,
 				'model' => $model->alias,
-				'foreign_key' => $model->id
+				'foreign_key' => $model->id,
+				'alias' => isset($model->data[$model->alias][$model->displayField]) ? $model->data[$model->alias][$model->displayField] : null
 			);
 			if (!$created) {
 				$node = $this->node($model, null, $type);
@@ -123,13 +243,35 @@ class AclBehavior extends ModelBehavior {
  * @access public
  */
 	function afterDelete(&$model) {
-		$types = (array)$this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
+		$types = $this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
+		if (!is_array($types)) {
+			$types = array($types);
+		}
 		foreach ($types as $type) {
 			$node = Set::extract($this->node($model, null, $type), "0.{$type}.id");
 			if (!empty($node)) {
 				$model->{$type}->delete($node);
 			}
 		}
+	}
+
+
+	function parentNode(&$model) {
+		if (!$model->id && empty($model->data)) {
+			return null;
+		}
+		$foreignKey = $this->settings[$model->alias]['foreignKey'];
+		$data = $model->data;
+		if (empty($data)) {
+			$data = $model->read();
+		}
+		if (!isset($data[$model->alias][$foreignKey])) {
+			$data[$model->alias][$foreignKey] = $model->field($foreignKey);
+		}
+		if (!array_key_exists($foreignKey, $data[$model->alias]) || empty($data[$model->alias][$foreignKey])) {
+			return null;
+		}
+		return array($this->settings[$model->alias]['parentClass'] => array('id' => $data[$model->alias][$foreignKey]));
 	}
 }
 

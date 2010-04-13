@@ -1025,7 +1025,7 @@ class AuthComponent extends Object {
             );
         }
         else {
-            $this->delete();
+            $this->__deleteCookie();
         }
     }
   

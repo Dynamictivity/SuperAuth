@@ -29,7 +29,6 @@
  * @subpackage    cake.cake.libs.controller.components
  */
 class AclComponent extends Object {
-    public $userAros = array();
 
 /**
  * Instance of an ACL class
@@ -58,65 +57,27 @@ class AclComponent extends Object {
 	}
 
 /**
- * Startup for Acl extended
+ * Startup for row-level acl
  */
 	function startup(&$controller) {
-		$this->controller =& $controller;
-		
-		if ($this->controller->Auth->user()) {
-			$this->__getUserAros();
-		}
-		
-		/*
-		switch ($this->controller->action) {
-		    case 'view':
-			if (isset($this->params['pass'][0])) {
-			    $this->controller->conditions = array(
-				'conditions' => array(
-				    $this->controller->modelClass . '.id' => $this->controller->params['pass'][0]
-				),
-				'contain' => array(
-				    'Owner' => array(
-					'fields' => array('name')
-				    )
-				)
-			    );
-			}
-			break;
-		    case 'index':
-			$activeFilter = array();
-			$conditions = array();
-	
-			if (isset($this->controller->params['named']['view'])) {
-			    $viewParam = $this->controller->params['named']['view'];
-	
-			    if ($viewParam == 'all') {
-			    // no activeFilter
-			    } elseif ($viewParam == 'inactive') {
-				$activeFilter = array($this->controller->modelClass . '.is_active' => null);
-			    }
-			} else {
-			    $activeFilter = array($this->controller->modelClass . '.is_active' => 1);
-			}
-	
-			if (!empty($activeFilter)) {
-			    $conditions = array(
-				'conditions' => array(
-				    $activeFilter
-				)
-			    );
-			}
-	
-			$this->controller->conditions = $this->aclConditions($conditions);
-			break;
-		}
-		*/
-		
-		switch ($this->controller->action) {
-		    case 'index':
-				$conditions = array('conditions' => array($this->controller->modelClass . '.is_active' => 1));
-				//$this->controller->conditions = $this->aclConditions($conditions);
+		if ($controller->Auth->user() && $controller->{$controller->modelClass}->Behaviors->attached('Acl')) {
+			$controller->{$controller->modelClass}->Behaviors->Acl->setUserAros($controller->Auth->user('id'));
+			
+			switch ($controller->action) {
+				case 'index':
+					$controller->{$controller->modelClass}->conditions = array(
+						'conditions' => array(
+							'or' => array(
+								$controller->modelClass . '.user_id' => User::get('id')
+							)
+						),
+						'contain' => array(
+							'Permissions',
+							'User'
+						)
+					);
 				break;
+			}
 		}
 	}
 
@@ -206,9 +167,7 @@ class AclComponent extends Object {
 		return $this->_Instance->revoke($aro, $aco, $action);
 	}
 	
-/**
- * Acl extended methods
- */
+	// row-level acl begin
     function cachePermissions($conditions = null, $clear = false) {
 		if ($conditions && !is_array($conditions)) {
 		    return;
@@ -236,72 +195,7 @@ class AclComponent extends Object {
 		    $PermissionCache->populate('Aro', $conditions['aro_id'], true);
 		}
     }
-
-    function aclConditions($options = array()) {
-		$settings = array(
-		    'model' => $this->controller->modelClass,
-		    'permissions' => null,
-		    'conditions' => null,
-		    'additional' => array(),
-		    'fields' => array('DISTINCT id', 'name'),
-		    'contain' => array(
-			    'PermissionCache' => array(
-					'fields' => array('foreign_key')
-				),
-			    'Owner' => array(
-					'fields' => array('id', 'name')
-				),
-			    'Permission'
-		    )
-		);
-	
-		extract(Set::merge($settings, $options));
-	
-		$sql = array(
-		    'conditions' => array(
-			'or' => array(
-			    'and' => array(
-				'PermissionCache.aro_id' => $this->userAros['Ids'],
-				'PermissionCache._read' => 1,
-				$permissions
-			    ),
-			    $model . '.owner_id' => User::get('id')
-			),
-			$conditions
-		    ),
-		    'fields' => $fields,
-		    'contain' => $contain
-		);
-	
-		return Set::merge($sql, $additional);
-    }
-
-    function __getUserAros($userId = null) {
-		if (!$userId) {
-		    $userId = User::get('id');
-		}
-		
-		$aros = $this->controller->Acl->Aro->find('all', array(
-		    'conditions' => array(
-			'Aro.model' => 'User',
-			'Aro.foreign_key' => $userId
-		    ),
-		    'fields' => array(
-			'Aro.id',
-			'Aro.model',
-			'Aro.foreign_key'
-		    )
-		));
-		
-		foreach ($aros as $aro) {
-		    $this->userAros['Objects'][] = array(
-				$aro['Aro']['model'] => array(
-				    'id' => $aro['Aro']['foreign_key']
-				)
-		    );
-		    $this->userAros['Ids'][$aro['Aro']['id']] = $aro['Aro']['id'];
-		}
-    }
+    // row-level acl end
 }
 
 /**
