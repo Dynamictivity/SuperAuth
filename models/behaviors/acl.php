@@ -77,13 +77,23 @@ class AclBehavior extends ModelBehavior {
 		$types = $this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
 		$types = (array)$types;
 		
-		if (in_array('Aco', $types)) {
+		if (in_array('Aco', $types) && array_key_exists('acl', $queryData)) {
 			$model->bindModel(
 				array(
 					'belongsTo' => array(
 						'Permissions' => array(
 							'className' => 'PermissionCache',
-							'foreignKey' => 'id'
+							'foreignKey' => 'id',
+							'fields' => array(
+								'id',
+								'aro_id',
+								'model',
+								'foreign_key',
+								'_create',
+								'_read',
+								'_update',
+								'_delete'
+							)
 						)
 					)
 				)
@@ -95,22 +105,19 @@ class AclBehavior extends ModelBehavior {
 						'and' => array(
 							'Permissions.model' => $model->alias,
 							'Permissions._read' => 1,
-							'Permissions.aro_id' => $this->__userAros
-						),
-						'User.id' => User::get('id') // @todo this needs some thought as to where to put it
+							'Permissions.aro_id' => $this->__userAros,
+							$queryData['acl']
+						)
 					)
 				),
-				'contain' => array(
-					'Permissions',
-				'User'
-				)
+
 			);
 			
-			$queryData = Set::merge($queryData, $conditions);
-			if (isset($model->conditions)) {
-				$queryData = Set::merge($queryData, $model->conditions);
+			if ($model->Behaviors->attached('Containable')) {
+				$conditions = Set::merge($conditions, array('contain' => array('Permissions')));
 			}
 			
+			$queryData = Set::merge($queryData, $conditions);
 			return $queryData;
 		}
 	}
