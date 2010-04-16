@@ -73,47 +73,51 @@ class AclBehavior extends ModelBehavior {
 	}
 	
 	// row-level acl begin
-	function beforefind(&$model) {
+	function beforefind(&$model, $queryData) {
 		$types = $this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
-		if (!is_array($types)) {
-			$types = array($types);
-		}
+		$types = (array)$types;
+		
 		if (in_array('Aco', $types)) {
 			$model->bindModel(
 				array(
 					'belongsTo' => array(
 						'Permissions' => array(
 							'className' => 'PermissionCache',
-							'foreignKey' => 'id',
-							'conditions' => array(
-								'and' => array(
-									'Permissions.model' => $model->alias,
-									'Permissions._read' => 1,
-									'Permissions.aro_id' => $this->__userAros
-								)
-							),
-							'fields' => array(
-								'Permissions.id',
-								'Permissions.aro_id',
-								'Permissions.model',
-								'Permissions.foreign_key',
-								'Permissions._create',
-								'Permissions._read',
-								'Permissions._update',
-								'Permissions._delete'
-							)
+							'foreignKey' => 'id'
 						)
 					)
 				)
 			);
+			
+			$conditions = array(
+				'conditions' => array(
+					'or' => array(
+						'and' => array(
+							'Permissions.model' => $model->alias,
+							'Permissions._read' => 1,
+							'Permissions.aro_id' => $this->__userAros
+						),
+						'User.id' => User::get('id') // @todo this needs some thought as to where to put it
+					)
+				),
+				'contain' => array(
+					'Permissions',
+				'User'
+				)
+			);
+			
+			$queryData = Set::merge($queryData, $conditions);
+			if (isset($model->conditions)) {
+				$queryData = Set::merge($queryData, $model->conditions);
+			}
+			
+			return $queryData;
 		}
 	}
 
-    function setUserAros($userId = null) {
-		$types = $this->__typeMaps[strtolower($this->settings[$this->model->alias]['type'])];
-		if (!is_array($types)) {
-			$types = array($types);
-		}
+    function getUserAros($userId = null) {
+    	$types = $this->__typeMaps[strtolower($this->settings[$this->model->alias]['type'])];
+		$types = (array)$types;
     	
     	if (!$userId) {
 		    return;
@@ -127,59 +131,20 @@ class AclBehavior extends ModelBehavior {
 		
 		$aros = $Aros->find('all',
 			array(
-			    'conditions' => array(
-				'Aro.model' => 'User',
-				'Aro.foreign_key' => $userId
-		    ),
-		    'fields' => array(
-				'Aro.id',
-				'Aro.model',
-				'Aro.foreign_key'
-		    )
-		));
+				'conditions' => array(
+					'Aro.model' => 'User',
+					'Aro.foreign_key' => $userId
+				),
+			    'fields' => array(
+					'Aro.id',
+					'Aro.model',
+					'Aro.foreign_key'
+			    )
+			)
+		);
 		
-		foreach ($aros as $aro) {
-		    $this->__userAros[] = $aro['Aro']['id'];
-		}
-    }
-
-    function aclConditions($options = array()) {
-		$settings = array(
-		    'model' => $this->controller->modelClass,
-		    'permissions' => null,
-		    'conditions' => null,
-		    'additional' => array(),
-		    'fields' => array('DISTINCT id', 'name'),
-		    'contain' => array(
-			    'PermissionCache' => array(
-					'fields' => array('foreign_key')
-				),
-			    'User' => array(
-					'fields' => array('id', 'name')
-				),
-			    'Permission'
-		    )
-		);
-	
-		extract(Set::merge($settings, $options));
-	
-		$sql = array(
-		    'conditions' => array(
-			'or' => array(
-			    'and' => array(
-					'PermissionCache.aro_id' => $this->userAros['Ids'],
-					'PermissionCache._read' => 1,
-					$permissions
-			    ),
-			    $model . '.user_id' => User::get('id')
-			),
-			$conditions
-		    ),
-		    'fields' => $fields,
-		    'contain' => $contain
-		);
-	
-		return Set::merge($sql, $additional);
+		$this->__userAros = Set::extract('/Aro/id', $aros);
+		return $this->__userAros;
     }
     // row-level acl end
 

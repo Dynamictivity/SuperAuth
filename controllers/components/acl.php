@@ -56,30 +56,46 @@ class AclComponent extends Object {
 		$this->_Instance->initialize($this);
 	}
 
-/**
- * Startup for row-level acl
- */
+	
+	// row-level acl begin
 	function startup(&$controller) {
-		if ($controller->Auth->user() && $controller->{$controller->modelClass}->Behaviors->attached('Acl')) {
-			$controller->{$controller->modelClass}->Behaviors->Acl->setUserAros($controller->Auth->user('id'));
+		if ($controller->Auth->user('id') && $controller->{$controller->modelClass}->Behaviors->attached('Acl')) {
+			$userAros = $controller->{$controller->modelClass}->Behaviors->Acl->getUserAros($controller->Auth->user('id'));
 			
-			switch ($controller->action) {
-				case 'index':
-					$controller->{$controller->modelClass}->conditions = array(
-						'conditions' => array(
-							'or' => array(
-								$controller->modelClass . '.user_id' => User::get('id')
-							)
-						),
-						'contain' => array(
-							'Permissions',
-							'User'
-						)
-					);
-				break;
+			foreach ($userAros as $aro) {
+				$this->cachePermissions(array('aro_id' => $aro));
 			}
 		}
 	}
+	
+    function cachePermissions($conditions = null, $clear = false) {
+		if ($conditions && !is_array($conditions)) {
+		    return;
+		}
+	
+		$PermissionCache = ClassRegistry::init('PermissionCache');
+		if ($clear) {
+		    $PermissionCache->deleteAll('1=1', false);
+		}
+	
+		if (!$conditions && !$PermissionCache->find('count')) {
+		    $aros = $this->controller->Acl->Aro->find('list');
+		    $acos = $this->controller->Acl->Aro->find('count');
+		    set_time_limit(max(count($aros) * $acos * 0.1, 30));
+		    foreach ($aros as $id => $display) {
+				$PermissionCache->populate('Aro', $id);
+		    }
+		}
+	
+		if (isset($conditions['aco_id'])) {
+		    $PermissionCache->populate('Aco', $conditions['aco_id'], true);
+		}
+	
+		if (isset($conditions['aro_id'])) {
+		    $PermissionCache->populate('Aro', $conditions['aro_id'], true);
+		}
+    }
+    // row-level acl end
 
 /**
  * Empty class defintion, to be overridden in subclasses.
@@ -166,36 +182,6 @@ class AclComponent extends Object {
 	function revoke($aro, $aco, $action = "*") {
 		return $this->_Instance->revoke($aro, $aco, $action);
 	}
-	
-	// row-level acl begin
-    function cachePermissions($conditions = null, $clear = false) {
-		if ($conditions && !is_array($conditions)) {
-		    return;
-		}
-	
-		$PermissionCache = ClassRegistry::init('PermissionCache');
-		if ($clear) {
-		    $PermissionCache->deleteAll('1=1', false);
-		}
-	
-		if (!$conditions && !$PermissionCache->find('count')) {
-		    $aros = $this->controller->Acl->Aro->find('list');
-		    $acos = $this->controller->Acl->Aro->find('count');
-		    set_time_limit(max(count($aros) * $acos * 0.1, 30));
-		    foreach ($aros as $id => $display) {
-				$PermissionCache->populate('Aro', $id);
-		    }
-		}
-	
-		if (isset($conditions['aco_id'])) {
-		    $PermissionCache->populate('Aco', $conditions['aco_id'], true);
-		}
-	
-		if (isset($conditions['aro_id'])) {
-		    $PermissionCache->populate('Aro', $conditions['aro_id'], true);
-		}
-    }
-    // row-level acl end
 }
 
 /**
