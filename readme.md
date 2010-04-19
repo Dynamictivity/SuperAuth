@@ -13,6 +13,7 @@ Currently it supports full row-level acl, among a few other goodies.
  * Automagic aros_acos rows created for user_id passed in model data
  * Support for user belonging to multiple groups (currently untested)
  * Permissions returned with query in $results['Permissions'] (used to determine whether to show/hide crud links)
+ * Automatic crud fallback if a row-id is not passed via the url
 
 ## Additional Information
  * PHP5
@@ -31,7 +32,13 @@ Currently it supports full row-level acl, among a few other goodies.
  * Drop everything where it goes inside your /app/ folder (DO NOT put these files in the /cake/ folder), it will "replace" the core cakePHP systems automatically, but don't worry, this is the most current Auth/ACL code from core, just extended for the extra functionality.
  * Add Auth/Acl/Session to your components array in appController, make sure to add Auth before ACL, or this system won't work properly.
  * Add Session to your helpers.
- * Configure Auth to this: Auth->authorize = 'acl'
+ 
+Configure Auth to this: Auth->authorize = 'acl' (You should only set this on controllers that use row-level acl, for the rest you should do Auth->authorize = 'actions')
+I put this in my appController beforeFilter, but you don't have to:
+
+	if ($this->{$this->modelClass}->Behaviors->attached('Acl')) {
+		$this->Auth->authorize = 'acl';
+	}
  
 ### Initialize Database Tables
  * If you are not already using ACL, follow the instructions here first: http://book.cakephp.org/view/1246/Getting-Started
