@@ -28,7 +28,7 @@ Currently it supports full row-level acl, among a few other goodies.
  * Other unknown potential issues. (Please let me know)
 
 ## Installation Instructions
- * Drop everything where it goes, it will "replace" the core cakePHP systems, but don't worry, this is the most current Auth/ACL code from core, just extended for the extra functionality.
+ * Drop everything where it goes inside your /app/ folder (DO NOT put these files in the /cake/ folder), it will "replace" the core cakePHP systems automatically, but don't worry, this is the most current Auth/ACL code from core, just extended for the extra functionality.
  * Add Auth/Acl/Session to your components array in appController, make sure to add Auth before ACL, or this system won't work properly.
  * Add Session/Acl to your helpers.
  
