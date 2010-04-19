@@ -81,13 +81,15 @@ The following is an example conditions array for all posts the user has update a
 	
 ### Using Returned Permissions In View Layer
 When you do a query using row-level ACL, the permissions are returned in the results under the "Permissions" model.
-
 For instance, if you have a table on your index, in your foreach you can do something like this:
 
 	if ($post['Permissions']['_edit']) {
 		echo $this->Html->link(__('Edit', true), array('action' => 'edit', $post['Post']['id']));
 	}
 	
+### Using Remember Me Functionality
+ * Just include a remember_me checkbox in your login form, and everything is automagic!
+
 ## Conclusion
 That is the basic implementation for now, there is more to come. I am constantly working on this because I have a very permissions intensive application, and that is why I have had to develop all of this. If you have any feedback, questions, comments, contributions, updates, etc - please let me know. I would love to know what is right/wrong and what and how things can be improved.
 
