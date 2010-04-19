@@ -69,8 +69,9 @@ Run the following queries in MySQL:
 
 ### Setting Up Your Models
 
-var $actsAs = array('Acl' => array('type' => 'requester', 'parentClass'=> 'Group', 'foreignKey' => 'group_id'));
- * Options are "controlled", "requester" or "both"
+	var $actsAs = array('Acl' => array('type' => 'requester', 'parentClass'=> 'Group', 'foreignKey' => 'group_id'));
+
+* Options are "controlled", "requester" or "both"
  
 ### Doing row-level-queries
 The following is an example conditions array for all posts the user has at least read access on
