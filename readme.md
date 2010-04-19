@@ -71,7 +71,7 @@ Run the following queries in MySQL:
 
 	var $actsAs = array('Acl' => array('type' => 'requester', 'parentClass'=> 'Group', 'foreignKey' => 'group_id'));
 
-* Options are "controlled", "requester" or "both"
+Options are "controlled", "requester" or "both"
  
 ### Doing row-level-queries
 The following is an example conditions array for all posts the user has at least read access on
