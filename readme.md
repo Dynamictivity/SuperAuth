@@ -18,7 +18,7 @@ Currently it supports full row-level acl, among a few other goodies.
  * PHP5
  * Should work with CakePHP 1.2 but untested
  
- ## Todo
+## Todo
  * If user doesn't have "create" access, don't let them create child acos
  * Permission management interface
  * Optimize when permission caching happens
