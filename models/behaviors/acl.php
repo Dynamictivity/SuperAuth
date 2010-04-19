@@ -28,7 +28,7 @@
  */
 class AclBehavior extends ModelBehavior {
 	// row-level acl
-	var $__userAros = null;
+	var $userAros = array();
 
 /**
  * Maps ACL type options to ACL models
@@ -77,7 +77,7 @@ class AclBehavior extends ModelBehavior {
 		$types = $this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
 		$types = (array)$types;
 		
-		if (in_array('Aco', $types) && array_key_exists('acl', $queryData)) {
+		if (in_array('Aco', $types) && array_key_exists('aclConditions', $queryData)) {
 			$model->bindModel(
 				array(
 					'belongsTo' => array(
@@ -105,8 +105,8 @@ class AclBehavior extends ModelBehavior {
 						'and' => array(
 							'Permissions.model' => $model->alias,
 							'Permissions._read' => 1,
-							'Permissions.aro_id' => $this->__userAros,
-							$queryData['acl']
+							'Permissions.aro_id' => $this->userAros,
+							$queryData['aclConditions']
 						)
 					)
 				),
@@ -121,38 +121,6 @@ class AclBehavior extends ModelBehavior {
 			return $queryData;
 		}
 	}
-
-    function getUserAros($userId = null) {
-    	$types = $this->__typeMaps[strtolower($this->settings[$this->model->alias]['type'])];
-		$types = (array)$types;
-    	
-    	if (!$userId) {
-		    return;
-		}
-		
-		if (!in_array('Aro', $types)) {
-			$Aros = Classregistry::init('Aro');
-		} else {
-			$Aros = $this->model->Aro;
-		}
-		
-		$aros = $Aros->find('all',
-			array(
-				'conditions' => array(
-					'Aro.model' => 'User',
-					'Aro.foreign_key' => $userId
-				),
-			    'fields' => array(
-					'Aro.id',
-					'Aro.model',
-					'Aro.foreign_key'
-			    )
-			)
-		);
-		
-		$this->__userAros = Set::extract('/Aro/id', $aros);
-		return $this->__userAros;
-    }
     // row-level acl end
 
 /**
@@ -166,7 +134,7 @@ class AclBehavior extends ModelBehavior {
 		if (empty($type)) {
 			$type = $this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
 			if (is_array($type)) {
-				trigger_error(__('AclBehavior is setup with more then one type, please specify type parameter for node()', true), E_USER_WARNING);
+				trigger_error(__('AclBehavior is setup with more than one type, please specify type parameter for node()', true), E_USER_WARNING);
 				return null;
 			}
 		}
@@ -205,6 +173,27 @@ class AclBehavior extends ModelBehavior {
 			}
 			$model->{$type}->create();
 			$model->{$type}->save($data);
+			
+			// row-level acl
+		 	if ($type == 'Aco' && !empty($model->data[$model->alias]['user_id'])) {
+				$userAro = ClassRegistry::init('Aro')->find('first', array(
+					'conditions' => array(
+						'model' => 'User',
+						'foreign_key' => $model->data[$model->alias]['user_id']
+					)
+				));
+		 		$ArosAco = ClassRegistry::init('ArosAco');
+				$arosAcoData = array(
+					'aro_id' => $userAro['Aro']['id'],
+					'aco_id' => $model->Aco->id,
+					'_create' => true,
+					'_read' => true,
+					'_update' => true,
+					'_delete' => true
+				);
+				$ArosAco->create();
+				$ArosAco->save($arosAcoData);
+			}
 		}
 	}
 

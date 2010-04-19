@@ -31,6 +31,9 @@ App::import('Core', array('Router', 'Security'), false);
  * @subpackage    cake.cake.libs.controller.components
  */
 class AuthComponent extends Object {
+	// row-level acl
+	var $userAros = array();
+
 /**
  * Properties added by RememberMe
  * Not documented yet
@@ -340,6 +343,29 @@ class AuthComponent extends Object {
 			$this->allowedActions == array('*') ||
 			in_array($action, $allowedActions)
 		);
+		
+		// row-level acl begin
+		if ($this->user()) {
+	    	$aros = Classregistry::init('Aro')->find('all',
+				array(
+					'conditions' => array(
+						'Aro.model' => $this->userModel,
+						'Aro.foreign_key' => $this->user('id')
+					),
+				    'fields' => array(
+						'Aro.id',
+						'Aro.model',
+						'Aro.foreign_key'
+				    )
+				)
+			);
+			
+			$this->userAros = Set::extract('/Aro/id', $aros);
+			if ($controller->{$controller->modelClass}->Behaviors->attached('Acl')) {
+				$controller->{$controller->modelClass}->Behaviors->Acl->userAros =& $this->userAros;
+			}
+		}
+		// row-level acl end
 
 		if ($loginAction != $url && $isAllowed) {
 			return true;

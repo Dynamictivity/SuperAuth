@@ -59,9 +59,8 @@ class AclComponent extends Object {
 	
 	// row-level acl begin
 	function startup(&$controller) {
-		if ($controller->Auth->user('id') && $controller->{$controller->modelClass}->Behaviors->attached('Acl')) {
-			$userAros = $controller->{$controller->modelClass}->Behaviors->Acl->getUserAros($controller->Auth->user('id'));
-			
+		if ($controller->Auth->user()) {
+			$userAros = $controller->Auth->userAros;
 			foreach ($userAros as $aro) {
 				$this->cachePermissions(array('aro_id' => $aro));
 			}

@@ -56,7 +56,7 @@ class PermissionCache extends AppModel {
  */
 	var $useTable = 'permission_cache';
 	var $primaryKey = 'foreign_key';
-	var $actsAs = array('Containable');
+	var $actsAs = array('Containable', 'Polymorphic' => array('classField' => 'model', 'foreignKey' => 'foreign_key'));
 
 	var $belongsTo = array(
 		'Aro' => array(
