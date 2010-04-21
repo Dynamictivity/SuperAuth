@@ -1,7 +1,7 @@
-# SuperCakeAuth
+# SuperAuth
 
 ## Introduction
-SuperCakeAuth is an extension to the core cakePHP authentication and acl behaviors and components.
+SuperAuth is an extension to the core cakePHP authentication and acl behaviors and components.
 Currently it supports full row-level acl, among a few other goodies.
 
 ## Current Features
