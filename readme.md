@@ -1,10 +1,12 @@
 # SuperAuth
 
 ## Introduction
+
 SuperAuth is a plugin which acts as an extension to the core cakePHP authentication and acl behaviors and components.
 Currently it supports full row-level acl, among a few other goodies.
 
 ## Current Features
+
  * Completely automagic row-level ACL (This took me a solid 6 months to perfect)
  * Remember me functionality (Inspiration from Google and The Bakery)
  * actsAs both Controlled(ACO) and Requester(ARO) (Thanks Ceeram)
@@ -16,34 +18,79 @@ Currently it supports full row-level acl, among a few other goodies.
  * Automatic crud fallback if a row-id is not passed via the url
 
 ## Additional Information
+
  * PHP5
  * Should work with CakePHP 1.2 but untested
  
 ## Todo
+
  * If user doesn't have "create" access, don't let them create child acos
  * Permission management interface
  * Optimize when permission caching happens, instead of on every page load
 
 ## Issues
+
  * No current permission management interface. (You have to DIY)
  * PermissionCache is updated on every page load, instead of only on permission changes
  * Other unknown potential issues. (Please let me know)
 
 ## Installation Instructions
- * Create a folder in /app/plugins/ called /super_auth/
- * Drop everything into your /app/plugins/super_auth/ folder.
- * Add SuperAuth.Auth/SuperAuth.Acl/Session to your components array in appController, make sure to add SuperAuth.Auth before SuperAuth.Acl, or this system won't work properly.
- * Add Session to your helpers array.
- 
-Configure SuperAuth.Auth to this: Auth->authorize = 'acl' (You should only set this on controllers that use row-level acl, for the rest you should do Auth->authorize = 'actions')
-I put this in my appController beforeFilter, but you don't have to:
 
-	if ($this->{$this->modelClass}->Behaviors->attached('SuperAuth.Acl')) {
-		$this->Auth->authorize = 'acl';
+ 1.	Create a folder in /app/plugins/ called /super_auth/
+ 2.	Drop everything into your /app/plugins/super_auth/ folder
+
+### Setup Your Controllers
+
+The following is an example app_controller
+
+	class AppController extends Controller {
+	
+	    var $components = array(
+	    	'SuperAuth.Auth' => array(
+	    		'authorize' => 'actions',
+	    		'actionPath' => 'controllers/',
+	    		'allowedActions' => array('display')
+	    	),
+			'SuperAuth.Acl',
+	    	'Session'
+	    );
+	
+	    var $helpers = array(
+			'Session'
+	    );
+	    
 	}
+
+Make sure to add SuperAuth.Auth in your components array before SuperAuth.Acl, or this system won't work properly.
+
+### Initialize Row-Level ACL Automatically
+
+Configure SuperAuth.Auth like so in the controllers you want to use row-level ACL (i.e. Posts Controller)
+
+	class PostsController extends Controller {
+	
+		function beforeFilter() {
+			$this->Auth->authorize = 'acl';
+			parent::beforeFilter();
+		}
+		
+	}
+	
+You should only set this on controllers that use row-level acl, for the rest you should do something like this:
+
+If you want to make it a bit more automated, as an example I have added this to my app_controller:
+
+	function beforeFilter() {
+		if ($this->{$this->modelClass}->Behaviors->attached('SuperAuth.Acl')) {
+			$this->Auth->authorize = 'acl';
+		}
+	}
+	
+What the above code does is initialize row-level ACL automatically when a model has the acl behavior attached. You do not need to have the row-level ACL magic working on models that do not require it. It could potentially cause problems, or slow down your application.
  
 ### Initialize Database Tables
- * If you are not already using ACL, follow the instructions here first: http://book.cakephp.org/view/1246/Getting-Started
+
+<b>If you are not already using ACL, follow the instructions here first: (http://book.cakephp.org/view/1246/Getting-Started)</b>
  
 Run the following queries in MySQL:
  
@@ -71,37 +118,42 @@ Run the following queries in MySQL:
 
 ### Setting Up Your Models
 
+The following is an example of what you would put in your user model, where user belongsTo group
+
 	var $actsAs = array('SuperAuth.Acl' => array('type' => 'requester', 'parentClass'=> 'Group', 'foreignKey' => 'group_id'));
 
-Options are "controlled", "requester" or "both"
+<em>Options are "controlled", "requester" or "both"</em>
  
 ### Doing row-level-queries
+
 The following is an example conditions array for all posts the user has at least read access on
  
 	array(
-		'conditions' => array(), //array of custom conditions
-		'aclConditions' => array() // only find records the user has read permissions on (default)
+		'conditions' => array(), // put your array of custom conditions here
+		'aclConditions' => array() // only find records the user has "read" permissions on (default)
 	)
 	
 The following is an example conditions array for all posts the user has update access on
  
 	array(
-		'conditions' => array(), //array of custom conditions
-		'aclConditions' => array('Permissions._update' => true) // only find records the user has read+update permissions on
+		'conditions' => array(), // put your array of custom conditions here
+		'aclConditions' => array('Permissions._update' => true) // only find records the user has "read+update" permissions on
 	)
 	
 ### Using Returned Permissions In View Layer
-When you do a query using row-level ACL, the permissions are returned in the results under the "Permissions" model.
-For instance, if you have a table on your index, in your foreach you can do something like this:
 
-	if ($post['Permissions']['_edit']) {
+When you do a query using row-level ACL, the permissions are returned in the results under the "Permissions" model.
+
+For instance, to decide whether or not to show an edit link, you can do something like this:
+
+	if ($post['Permissions']['_update']) {
 		echo $this->Html->link(__('Edit', true), array('action' => 'edit', $post['Post']['id']));
 	}
 	
 ### Using Remember Me Functionality
- * Just include a remember_me checkbox in your login form, and everything is automagic!
+
+All you need to do to activate this is include a remember_me checkbox in your login form, and everything else is magic!
 
 ## Conclusion
-That is the basic implementation for now, there is more to come. I am constantly working on this because I have a very permissions intensive application, and that is why I have had to develop all of this. If you have any feedback, questions, comments, contributions, updates, etc - please let me know. I would love to know what is right/wrong and what and how things can be improved.
 
-Hopefully someday the core Auth/ACL will be able to do everything I am doing here.
+That is the basic implementation for now, there is more to come. I am constantly working on this because I have a very permissions intensive application, and that is why I have had to develop all of this. If you have any feedback, questions, comments, contributions, updates, etc - please let me know. I would love to know what is right/wrong and what and how things can be improved.
