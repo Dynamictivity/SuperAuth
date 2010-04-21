@@ -4,6 +4,8 @@
 SuperAuth is a plugin which acts as an extension to the core cakePHP authentication and acl behaviors and components.
 Currently it supports full row-level acl, among a few other goodies.
 
+<b>If you are not already using ACL in your cakePHP app, read the</b> [Cook Book](http://book.cakephp.org/view/1242/Access-Control-Lists)
+
 ## Current Features
  * Completely automagic row-level ACL (This took me a solid 6 months to perfect)
  * Remember me functionality (Inspiration from Google and The Bakery)
@@ -67,8 +69,6 @@ Configure SuperAuth.Auth like so in the controllers you want to use row-level AC
 		}
 		
 	}
-	
-You should only set this on controllers that use row-level acl, for the rest you should do something like this:
 
 If you want to make it a bit more automated, as an example I have added this to my app_controller:
 
@@ -81,8 +81,7 @@ If you want to make it a bit more automated, as an example I have added this to 
 What the above code does is initialize row-level ACL automatically when a model has the acl behavior attached. You do not need to have the row-level ACL magic working on models that do not require it. It could potentially cause problems, or slow down your application.
  
 ### Initialize Database Tables
-<b>If you are not already using ACL, follow the instructions at the</b> [Cook Book](http://book.cakephp.org/view/1242/Access-Control-Lists)
- 
+
 Run the following queries in MySQL:
  
 	ALTER TABLE  `aros_acos` ADD UNIQUE (
@@ -115,14 +114,14 @@ The following is an example of what you would put in your user model, where user
 <em>Options are "controlled", "requester" or "both"</em>
  
 ### Doing row-level-queries
-The following is an example conditions array for all posts the user has at least read access on
+The following is an example conditions array for all records the user has at least read access on
  
 	array(
 		'conditions' => array(), // put your array of custom conditions here
 		'aclConditions' => array() // only find records the user has "read" permissions on (default)
 	)
 	
-The following is an example conditions array for all posts the user has update access on
+The following is an example conditions array for all records the user has update access on
  
 	array(
 		'conditions' => array(), // put your array of custom conditions here
@@ -130,7 +129,7 @@ The following is an example conditions array for all posts the user has update a
 	)
 	
 ### Using Returned Permissions In View Layer
-When you do a query using row-level ACL, the permissions are returned in the results under the "Permissions" model.
+When you do a query using row-level ACL, the permissions are returned in the results under the associated "Permissions" model. (Note the Permissions model name is plural to avoid conflicts)
 
 For instance, to decide whether or not to show an edit link, you can do something like this:
 
@@ -138,7 +137,7 @@ For instance, to decide whether or not to show an edit link, you can do somethin
 		echo $this->Html->link(__('Edit', true), array('action' => 'edit', $post['Post']['id']));
 	}
 	
-### Using Remember Me Functionality
+## Using Remember Me Functionality
 All you need to do to activate this is include a remember_me checkbox in your login form, and everything else is magic!
 
 ## Conclusion
