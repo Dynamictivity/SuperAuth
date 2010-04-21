@@ -90,7 +90,7 @@ What the above code does is initialize row-level ACL automatically when a model 
  
 ### Initialize Database Tables
 
-<b>If you are not already using ACL, follow the instructions at the</b> [Cook Book](http://book.cakephp.org/view/1246/Getting-Started)
+<b>If you are not already using ACL, follow the instructions at the</b> [Cook Book](http://book.cakephp.org/view/1242/Access-Control-Lists)
  
 Run the following queries in MySQL:
  
