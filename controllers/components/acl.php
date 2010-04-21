@@ -72,7 +72,7 @@ class AclComponent extends Object {
 		    return;
 		}
 	
-		$PermissionCache = ClassRegistry::init('PermissionCache');
+		$PermissionCache = ClassRegistry::init('SuperAuth.PermissionCache');
 		if ($clear) {
 		    $PermissionCache->deleteAll('1=1', false);
 		}

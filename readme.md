@@ -1,7 +1,7 @@
 # SuperAuth
 
 ## Introduction
-SuperAuth is an extension to the core cakePHP authentication and acl behaviors and components.
+SuperAuth is a plugin which acts as an extension to the core cakePHP authentication and acl behaviors and components.
 Currently it supports full row-level acl, among a few other goodies.
 
 ## Current Features
@@ -22,21 +22,23 @@ Currently it supports full row-level acl, among a few other goodies.
 ## Todo
  * If user doesn't have "create" access, don't let them create child acos
  * Permission management interface
- * Optimize when permission caching happens
+ * Optimize when permission caching happens, instead of on every page load
 
 ## Issues
  * No current permission management interface. (You have to DIY)
+ * PermissionCache is updated on every page load, instead of only on permission changes
  * Other unknown potential issues. (Please let me know)
 
 ## Installation Instructions
- * Drop everything where it goes inside your /app/ folder (DO NOT put these files in the /cake/ folder), it will "replace" the core cakePHP systems automatically, but don't worry, this is the most current Auth/ACL code from core, just extended for the extra functionality.
- * Add Auth/Acl/Session to your components array in appController, make sure to add Auth before ACL, or this system won't work properly.
- * Add Session to your helpers.
+ * Create a folder in /app/plugins/ called /super_auth/
+ * Drop everything into your /app/plugins/super_auth/ folder.
+ * Add SuperAuth.Auth/SuperAuth.Acl/Session to your components array in appController, make sure to add SuperAuth.Auth before SuperAuth.Acl, or this system won't work properly.
+ * Add Session to your helpers array.
  
-Configure Auth to this: Auth->authorize = 'acl' (You should only set this on controllers that use row-level acl, for the rest you should do Auth->authorize = 'actions')
+Configure SuperAuth.Auth to this: Auth->authorize = 'acl' (You should only set this on controllers that use row-level acl, for the rest you should do Auth->authorize = 'actions')
 I put this in my appController beforeFilter, but you don't have to:
 
-	if ($this->{$this->modelClass}->Behaviors->attached('Acl')) {
+	if ($this->{$this->modelClass}->Behaviors->attached('SuperAuth.Acl')) {
 		$this->Auth->authorize = 'acl';
 	}
  
@@ -69,7 +71,7 @@ Run the following queries in MySQL:
 
 ### Setting Up Your Models
 
-	var $actsAs = array('Acl' => array('type' => 'requester', 'parentClass'=> 'Group', 'foreignKey' => 'group_id'));
+	var $actsAs = array('SuperAuth.Acl' => array('type' => 'requester', 'parentClass'=> 'Group', 'foreignKey' => 'group_id'));
 
 Options are "controlled", "requester" or "both"
  
@@ -78,14 +80,14 @@ The following is an example conditions array for all posts the user has at least
  
 	array(
 		'conditions' => array(), //array of custom conditions
-		'aclConditions' => array() // it's as simple as adding this, pretty simple eh?
+		'aclConditions' => array() // only find records the user has read permissions on (default)
 	)
 	
 The following is an example conditions array for all posts the user has update access on
  
 	array(
 		'conditions' => array(), //array of custom conditions
-		'aclConditions' => array('Permissions._update' => true) // it's as simple as adding this, pretty simple eh?
+		'aclConditions' => array('Permissions._update' => true) // only find records the user has read+update permissions on
 	)
 	
 ### Using Returned Permissions In View Layer

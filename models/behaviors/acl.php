@@ -82,7 +82,7 @@ class AclBehavior extends ModelBehavior {
 				array(
 					'belongsTo' => array(
 						'Permissions' => array(
-							'className' => 'PermissionCache',
+							'className' => 'SuperAuth.PermissionCache',
 							'foreignKey' => 'id',
 							'fields' => array(
 								'id',

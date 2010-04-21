@@ -32,7 +32,7 @@
  * @package       acl
  * @subpackage    acl.models
  */
-class PermissionCache extends AppModel {
+class PermissionCache extends SuperAuthAppModel {
 /**
  * name property
  *
@@ -56,7 +56,7 @@ class PermissionCache extends AppModel {
  */
 	var $useTable = 'permission_cache';
 	var $primaryKey = 'foreign_key';
-	var $actsAs = array('Containable', 'Polymorphic' => array('classField' => 'model', 'foreignKey' => 'foreign_key'));
+	var $actsAs = array('Containable');
 
 	var $belongsTo = array(
 		'Aro' => array(
