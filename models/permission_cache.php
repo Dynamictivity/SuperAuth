@@ -177,7 +177,9 @@ class PermissionCache extends SuperAuthAppModel {
 					)
 				)
 			WHERE
-				$alias.id = $id");
+				$alias.id = $id
+					AND NOT
+						(theAco.model IS NULL)");
 	}
 /**
  * truncate method
