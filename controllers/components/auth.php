@@ -732,6 +732,7 @@ class AuthComponent extends Object {
  * @access public
  */
 	function login($data = null) {
+		$model =& $this->getModel();
 		$this->__setDefaults();
 		$this->_loggedIn = false;
 
@@ -743,17 +744,17 @@ class AuthComponent extends Object {
 			$this->Session->write($this->sessionKey, $user);
 
 	        // begin RememberMe
-			if (empty($this->data['User']['remember_me'])) {
+			if (empty($this->data[$model->alias]['remember_me'])) {
 	            $this->__deleteCookie();
 	        }
 			else {
 				$this->__remember(
-					$this->data['User'][$this->fields['username']],
-					$this->data['User'][$this->fields['password']]
+					$this->data[$model->alias][$this->fields['username']],
+					$this->data[$model->alias][$this->fields['password']]
 				);
 			}
 			
-			unset($this->data['User']['remember_me']);
+			unset($this->data[$model->alias]['remember_me']);
 			// end RememberMe
 			
 			$this->_loggedIn = true;
