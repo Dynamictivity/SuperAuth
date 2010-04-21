@@ -1,12 +1,10 @@
 # SuperAuth
 
 ## Introduction
-
 SuperAuth is a plugin which acts as an extension to the core cakePHP authentication and acl behaviors and components.
 Currently it supports full row-level acl, among a few other goodies.
 
 ## Current Features
-
  * Completely automagic row-level ACL (This took me a solid 6 months to perfect)
  * Remember me functionality (Inspiration from Google and The Bakery)
  * actsAs both Controlled(ACO) and Requester(ARO) (Thanks Ceeram)
@@ -18,29 +16,24 @@ Currently it supports full row-level acl, among a few other goodies.
  * Automatic crud fallback if a row-id is not passed via the url
 
 ## Additional Information
-
  * PHP5
  * Should work with CakePHP 1.2 but untested
  
 ## Todo
-
  * If user doesn't have "create" access, don't let them create child acos
  * Permission management interface
  * Optimize when permission caching happens, instead of on every page load
 
 ## Issues
-
  * No current permission management interface. (You have to DIY)
  * PermissionCache is updated on every page load, instead of only on permission changes
  * Other unknown potential issues. (Please let me know)
 
 ## Installation Instructions
-
  1.	Create a folder in /app/plugins/ called /super_auth/
  2.	Drop everything into your /app/plugins/super_auth/ folder
 
 ### Setup Your Controllers
-
 The following is an example app_controller
 
 	class AppController extends Controller {
@@ -64,7 +57,6 @@ The following is an example app_controller
 Make sure to add SuperAuth.Auth in your components array before SuperAuth.Acl, or this system won't work properly.
 
 ### Initialize Row-Level ACL Automatically
-
 Configure SuperAuth.Auth like so in the controllers you want to use row-level ACL (i.e. Posts Controller)
 
 	class PostsController extends Controller {
@@ -89,7 +81,6 @@ If you want to make it a bit more automated, as an example I have added this to 
 What the above code does is initialize row-level ACL automatically when a model has the acl behavior attached. You do not need to have the row-level ACL magic working on models that do not require it. It could potentially cause problems, or slow down your application.
  
 ### Initialize Database Tables
-
 <b>If you are not already using ACL, follow the instructions at the</b> [Cook Book](http://book.cakephp.org/view/1242/Access-Control-Lists)
  
 Run the following queries in MySQL:
@@ -117,7 +108,6 @@ Run the following queries in MySQL:
 	) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 ### Setting Up Your Models
-
 The following is an example of what you would put in your user model, where user belongsTo group
 
 	var $actsAs = array('SuperAuth.Acl' => array('type' => 'requester', 'parentClass'=> 'Group', 'foreignKey' => 'group_id'));
@@ -125,7 +115,6 @@ The following is an example of what you would put in your user model, where user
 <em>Options are "controlled", "requester" or "both"</em>
  
 ### Doing row-level-queries
-
 The following is an example conditions array for all posts the user has at least read access on
  
 	array(
@@ -141,7 +130,6 @@ The following is an example conditions array for all posts the user has update a
 	)
 	
 ### Using Returned Permissions In View Layer
-
 When you do a query using row-level ACL, the permissions are returned in the results under the "Permissions" model.
 
 For instance, to decide whether or not to show an edit link, you can do something like this:
@@ -151,9 +139,7 @@ For instance, to decide whether or not to show an edit link, you can do somethin
 	}
 	
 ### Using Remember Me Functionality
-
 All you need to do to activate this is include a remember_me checkbox in your login form, and everything else is magic!
 
 ## Conclusion
-
 That is the basic implementation for now, there is more to come. I am constantly working on this because I have a very permissions intensive application, and that is why I have had to develop all of this. If you have any feedback, questions, comments, contributions, updates, etc - please let me know. I would love to know what is right/wrong and what and how things can be improved.
