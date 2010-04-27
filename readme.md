@@ -25,6 +25,7 @@ Currently it supports full row-level acl, among a few other goodies.
  * If user doesn't have "create" access, don't let them create child acos
  * Permission management interface
  * Optimize when permission caching happens, instead of on every page load
+ * When auto-creating permissions on record creation, check parent permissions if they exist and apply those permissions instead of full access (optionally)
 
 ## Issues
  * No current permission management interface. (You have to DIY)
