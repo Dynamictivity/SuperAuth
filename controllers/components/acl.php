@@ -59,39 +59,32 @@ class AclComponent extends Object {
 	
 	// row-level acl begin
 	function startup(&$controller) {
-		if ($controller->Auth->user()) {
-			$userAros = $controller->Auth->userAros;
+		$this->controller = $controller;
+		if ($this->controller->Auth->user()) {
+			$userAros = $this->controller->Auth->userAros;
 			foreach ($userAros as $aro) {
-				$this->cachePermissions(array('aro_id' => $aro));
+				$this->cachePermissions('Aro', $aro, true);
 			}
 		}
 	}
 	
-    function cachePermissions($conditions = null, $clear = false) {
-		if ($conditions && !is_array($conditions)) {
-		    return;
-		}
-	
-		$PermissionCache = ClassRegistry::init('SuperAuth.PermissionCache');
+    function cachePermissions($type = 'Aco', $id = null, $clear = false, $table = 'permission_cache') {
+    	$PermissionCache = ClassRegistry::init('SuperAuth.PermissionCache');
 		if ($clear) {
-		    $PermissionCache->deleteAll('1=1', false);
+		    $PermissionCache->clear($type, $id, $table);;
 		}
 	
-		if (!$conditions && !$PermissionCache->find('count')) {
+		if ($type === 'Aco' && !$id) {
 		    $aros = $this->controller->Acl->Aro->find('list');
 		    $acos = $this->controller->Acl->Aro->find('count');
 		    set_time_limit(max(count($aros) * $acos * 0.1, 30));
 		    foreach ($aros as $id => $display) {
-				$PermissionCache->populate('Aro', $id);
+				$PermissionCache->populate('Aro', $id, true, $table);
 		    }
 		}
 	
-		if (isset($conditions['aco_id'])) {
-		    $PermissionCache->populate('Aco', $conditions['aco_id'], true);
-		}
-	
-		if (isset($conditions['aro_id'])) {
-		    $PermissionCache->populate('Aro', $conditions['aro_id'], true);
+		if (isset($type) && isset($id)) {
+		    $PermissionCache->populate($type, $id, true, $table);
 		}
     }
     // row-level acl end
@@ -359,45 +352,52 @@ class DbAcl extends AclBase {
  * @access public
  */
 	function allow($aro, $aco, $actions = "*", $value = 1) {
-		$perms = $this->getAclLink($aro, $aco);
-		$permKeys = $this->_getAcoKeys($this->Aro->Permission->schema());
-		$save = array();
-
-		if ($perms == false) {
-			trigger_error(__('DbAcl::allow() - Invalid node', true), E_USER_WARNING);
-			return false;
-		}
-		if (isset($perms[0])) {
-			$save = $perms[0][$this->Aro->Permission->alias];
-		}
-
-		if ($actions == "*") {
+		$success = true;
+		$aros = (array)$aro;
+		foreach ($aros as $aro) {
+			$perms = $this->getAclLink($aro, $aco);
 			$permKeys = $this->_getAcoKeys($this->Aro->Permission->schema());
-			$save = array_combine($permKeys, array_pad(array(), count($permKeys), $value));
-		} else {
-			if (!is_array($actions)) {
-				$actions = array('_' . $actions);
+			$save = array();
+	
+			if ($perms == false) {
+				trigger_error(__('DbAcl::allow() - Invalid node', true), E_USER_WARNING);
+				return false;
 			}
-			if (is_array($actions)) {
-				foreach ($actions as $action) {
-					if ($action{0} != '_') {
-						$action = '_' . $action;
-					}
-					if (in_array($action, $permKeys)) {
-						$save[$action] = $value;
+			if (isset($perms[0])) {
+				$save = $perms[0][$this->Aro->Permission->alias];
+			}
+	
+			if ($actions == "*") {
+				$permKeys = $this->_getAcoKeys($this->Aro->Permission->schema());
+				$save = array_combine($permKeys, array_pad(array(), count($permKeys), $value));
+			} else {
+				if (!is_array($actions)) {
+					$actions = array('_' . $actions);
+				}
+				if (is_array($actions)) {
+					foreach ($actions as $action) {
+						if ($action{0} != '_') {
+							$action = '_' . $action;
+						}
+						if (in_array($action, $permKeys)) {
+							$save[$action] = $value;
+						}
 					}
 				}
 			}
+			list($save['aro_id'], $save['aco_id']) = array($perms['aro'], $perms['aco']);
+	
+			if ($perms['link'] != null && !empty($perms['link'])) {
+				$save['id'] = $perms['link'][0][$this->Aro->Permission->alias]['id'];
+			} else {
+				unset($save['id']);
+				$this->Aro->Permission->id = null;
+			}
+			if (!$this->Aro->Permission->save($save)) {
+				$success = false;
+			}
 		}
-		list($save['aro_id'], $save['aco_id']) = array($perms['aro'], $perms['aco']);
-
-		if ($perms['link'] != null && !empty($perms['link'])) {
-			$save['id'] = $perms['link'][0][$this->Aro->Permission->alias]['id'];
-		} else {
-			unset($save['id']);
-			$this->Aro->Permission->id = null;
-		}
-		return ($this->Aro->Permission->save($save) !== false);
+		return $success;
 	}
 
 /**

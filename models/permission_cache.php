@@ -107,13 +107,13 @@ class PermissionCache extends SuperAuthAppModel {
  * @return void
  * @access public
  */
-	function clear($type = 'Aco', $id = null) {
-		$field = low($type) . '_id';
-		$conditions = array();
-		if ($id) {
-			$conditions[$field] = $id;
+	function clear($type = null, $id = null, $table = 'permission_cache') {
+		$field = strtolower($type) . '_id';
+		$conditions = null;
+		if ($id && $type) {
+			$conditions =  ' WHERE `' . $field . '` = '. $id;
 		}
-		$this->deleteAll($conditions, false);
+		$this->query('DELETE FROM ' . $table . $conditions . ';');
 	}
 /**
  * populate method
@@ -123,20 +123,14 @@ class PermissionCache extends SuperAuthAppModel {
  * @return void
  * @access public
  */
-	function populate($type = 'Aco', $id = null, $clear = false) {
+	function populate($type = 'Aco', $id = null, $clear = false, $table = 'permission_cache') {
 		$field = low($type) . '_id';
-		$conditions = array();
-		if ($id) {
-			$conditions[$field] = $id;
-		}
 		if ($clear) {
-			$this->clear($type, $id);
-		} elseif ($this->find('count', compact('conditions'))) {
-			return false;
+			$this->clear($type, $id, $table);
 		}
 		$alias = 'the' . $type;
 		$date = date('Y-m-d H:i:s');
-		$this->query("INSERT INTO permission_cache
+		$this->query("INSERT INTO $table
 			(aro_id, aco_id, model, foreign_key, _create, _read, _update, _delete, rule_id, rule_aro_id, rule_aco_id, created)
 			SELECT
 				theAro.id as AroId,

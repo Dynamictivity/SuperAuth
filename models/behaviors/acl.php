@@ -175,7 +175,7 @@ class AclBehavior extends ModelBehavior {
 			$model->{$type}->save($data);
 			
 			// row-level acl
-		 	if ($type == 'Aco' && !empty($model->data[$model->alias]['user_id']) && $created) {
+		 	if ($type == 'Aco' && $created && empty($model->data[$model->alias][$this->settings[$model->alias]['foreignKey']]) && !empty($model->data[$model->alias]['user_id'])) {
 				$userAro = ClassRegistry::init('Aro')->find('first', array(
 					'conditions' => array(
 						'model' => 'User',

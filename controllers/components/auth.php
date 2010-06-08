@@ -361,7 +361,7 @@ class AuthComponent extends Object {
 			);
 			
 			$this->userAros = Set::extract('/Aro/id', $aros);
-			if ($controller->{$controller->modelClass}->Behaviors->attached('Acl')) {
+			if (isset($controller->{$controller->modelClass}) && $controller->{$controller->modelClass}->Behaviors->attached('Acl')) {
 				$controller->{$controller->modelClass}->Behaviors->Acl->userAros =& $this->userAros;
 			}
 		}
