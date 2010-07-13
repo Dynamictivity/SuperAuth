@@ -175,8 +175,10 @@ Let's say you decide you do not want to update the cache for a certain query bec
 							'Permissions._update' => true
 						)
 					),
-					// disable caching of the user's permissions for this query
-					'cache' => false
+					array(
+						// disable caching of the user's permissions for this query
+						'cache' => false
+					)
 				)
 			);
 			$this->set(compact('posts'));
