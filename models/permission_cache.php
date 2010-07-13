@@ -186,4 +186,3 @@ class PermissionCache extends SuperAuthAppModel {
 		$this->query('TRUNCATE permission_cache');
 	}
 }
-?>

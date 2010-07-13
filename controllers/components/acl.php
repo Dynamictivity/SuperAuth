@@ -60,6 +60,9 @@ class AclComponent extends Object {
 	// row-level acl begin
 	function startup(&$controller) {
 		$this->controller = $controller;
+	}
+	
+	public function updateCache() {
 		if ($this->controller->Auth->user()) {
 			$userAros = $this->controller->Auth->userAros;
 			foreach ($userAros as $aro) {
@@ -68,8 +71,8 @@ class AclComponent extends Object {
 		}
 	}
 	
-    function cachePermissions($type = 'Aco', $id = null, $clear = false, $table = 'permission_cache') {
-    	$PermissionCache = ClassRegistry::init('SuperAuth.PermissionCache');
+  function cachePermissions($type = 'Aco', $id = null, $clear = false, $table = 'permission_cache') {
+  	$PermissionCache = ClassRegistry::init('SuperAuth.PermissionCache');
 		if ($clear) {
 		    $PermissionCache->clear($type, $id, $table);;
 		}
@@ -86,8 +89,41 @@ class AclComponent extends Object {
 		if (isset($type) && isset($id)) {
 		    $PermissionCache->populate($type, $id, true, $table);
 		}
-    }
-    // row-level acl end
+  }
+
+	public function conditions($conditions = array(), $params = array()) {
+		// setup our defaults
+		$defaults = array(
+			'defaultConditions' => array(
+				'aclConditions' => array(),
+				'contain' => array(
+					'User' => array(
+						'fields' => array(
+							'id',
+							'name'
+						)
+					)
+				)
+			),
+			'merge' => true,
+			'cache' => true
+		);
+		// merge our defaults with the passed params
+		$settings = Set::merge($defaults, $params);
+		// extract our settings
+		extract($settings);
+		// if merge is true, merge our default conditions with the passed conditions
+		if ($merge) {
+			$conditions = Set::merge($defaultConditions, $conditions);
+		}
+		// if cache is true, update the user's permission cache
+		if ($cache) {
+			// update the user's permission cache
+			$this->updateCache();
+		}
+		return $conditions;
+	}
+  // row-level acl end
 
 /**
  * Empty class defintion, to be overridden in subclasses.
@@ -639,4 +675,3 @@ class IniAcl extends AclBase {
 		return $array;
 	}
 }
-?>

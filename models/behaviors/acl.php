@@ -76,8 +76,8 @@ class AclBehavior extends ModelBehavior {
 	function beforefind(&$model, $queryData) {
 		$types = $this->__typeMaps[strtolower($this->settings[$model->alias]['type'])];
 		$types = (array)$types;
-		
 		if (in_array('Aco', $types) && array_key_exists('aclConditions', $queryData)) {
+			$this->__getUserAros();
 			$model->bindModel(
 				array(
 					'belongsTo' => array(
@@ -96,7 +96,7 @@ class AclBehavior extends ModelBehavior {
 							)
 						)
 					)
-				)
+				), false
 			);
 			
 			$conditions = array(
@@ -110,16 +110,32 @@ class AclBehavior extends ModelBehavior {
 						)
 					)
 				),
-
+				'contain' => array(
+					'Permissions'
+				)
 			);
-			
-			if ($model->Behaviors->attached('Containable')) {
-				$conditions = Set::merge($conditions, array('contain' => array('Permissions')));
-			}
-			
+			unset($queryData['aclConditions']);
 			$queryData = Set::merge($queryData, $conditions);
 			return $queryData;
 		}
+	}
+	
+	private function __getUserAros() {
+    	$aros = Classregistry::init('Aro')->find('all',
+			array(
+				'conditions' => array(
+					'Aro.model' => 'User',
+					'Aro.foreign_key' => User::get('id')
+				),
+			    'fields' => array(
+					'Aro.id',
+					'Aro.model',
+					'Aro.foreign_key'
+			    )
+			)
+		);
+		
+		$this->userAros = Set::extract('/Aro/id', $aros);
 	}
     // row-level acl end
 
@@ -235,5 +251,3 @@ class AclBehavior extends ModelBehavior {
 		return array($this->settings[$model->alias]['parentClass'] => array('id' => $data[$model->alias][$foreignKey]));
 	}
 }
-
-?>

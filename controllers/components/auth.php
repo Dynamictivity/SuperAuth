@@ -361,9 +361,6 @@ class AuthComponent extends Object {
 			);
 			
 			$this->userAros = Set::extract('/Aro/id', $aros);
-			if (isset($controller->{$controller->modelClass}) && $controller->{$controller->modelClass}->Behaviors->attached('Acl')) {
-				$controller->{$controller->modelClass}->Behaviors->Acl->userAros =& $this->userAros;
-			}
 		}
 		// row-level acl end
 
@@ -1060,4 +1057,3 @@ class AuthComponent extends Object {
         $this->Cookie->delete($this->cookieName);
     }
 }
-?>
