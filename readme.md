@@ -47,7 +47,7 @@ The following is an example app_controller
 				'actionPath' => 'controllers/',
 				'allowedActions' => array('display')
 			),
-		'SuperAuth.Acl',
+			'SuperAuth.Acl',
 			'Session'
 		);
 
