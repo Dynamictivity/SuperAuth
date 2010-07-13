@@ -158,7 +158,7 @@ The aclConditions options are of course as follows:
  * _update
  * _delete
 
-### Changing Row Level Acl Defaults On The Fly
+## Changing Row-Level-Acl Defaults On The Fly
 Let's say you decide you do not want to update the cache for a certain query because it is already up to date from a previous query, you can do something such as this:
 
 	class PostsController extends Controller {
@@ -209,7 +209,7 @@ The defaults in Acl::conditions() looks like this:
 		'cache' => true
 	);
 
-### Caching User's Permissions Manually
+## Caching User's Permissions Manually
 All you have to do is call the following to update the logged-in user's permission cache
 
 	$this->Acl->updateCache();
