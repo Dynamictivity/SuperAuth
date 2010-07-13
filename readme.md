@@ -114,7 +114,7 @@ The following is an example of what you would put in your user model, where user
 
 <em>Options are "controlled", "requester" or "both"</em>
 
-### Doing row-level-queries
+## Performing Row-Level-Acl Queries
 The following is an example conditions array for all posts the user has at least read access on
 
 	class PostsController extends Controller {
@@ -214,7 +214,7 @@ All you have to do is call the following to update the logged-in user's permissi
 
 	$this->Acl->updateCache();
 
-### Using Returned Permissions In View Layer
+## Using Returned Permissions In View Layer
 When you do a query using row-level ACL, the permissions are returned in the results under the associated "Permissions" model. (Note the Permissions model name is plural to avoid conflicts)
 
 For instance, to decide whether or not to show an edit link, you can do something like this:
