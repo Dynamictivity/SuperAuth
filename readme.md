@@ -135,7 +135,7 @@ The following is an example conditions array for all <b>ACTIVE</b> posts the use
 		function my_posts() {
 			$posts = $this->Post->find('all',
 				// find only posts the user has at least read and update access to
-				$this->Acl->condtions(
+				$this->Acl->conditions(
 					array(
 						'conditions' => array(
 							'Post.is_active' => true
@@ -166,7 +166,7 @@ Let's say you decide you do not want to update the cache for a certain query bec
 		function my_posts() {
 			$posts = $this->Post->find('all',
 				// find only posts the user has at least read and update access to
-				$this->Acl->condtions(
+				$this->Acl->conditions(
 					array(
 						'conditions' => array(
 							'Post.is_active' => true
