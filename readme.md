@@ -121,7 +121,7 @@ The following is an example conditions array for all posts the user has at least
 
 		function my_posts() {
 			// find only posts the user has at least read access to
-			$conditions = $this->Acl->condtions();
+			$conditions = $this->Acl->conditions();
 			$posts = $this->Post->find('all', $conditions);
 			$this->set(compact('posts'));
 		}
